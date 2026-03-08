@@ -1,0 +1,40 @@
+"""FastAPI 애플리케이션 진입점."""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.tarot import router as tarot_router
+from app.core.config import settings
+from app.core.logging import logger
+
+app = FastAPI(
+    title="Acrana Love — AI Tarot API",
+    description="AI 기반 사랑 타로 리딩 백엔드",
+    version="0.1.0",
+)
+
+# CORS 설정 — 프론트엔드(Vite dev server)에서의 요청 허용
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 라우터 등록
+app.include_router(tarot_router)
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+
+@app.on_event("startup")
+async def on_startup():
+    logger.info("🔮 Acrana Love API 시작")
+    if not settings.openai_api_key or settings.openai_api_key == "your-openai-api-key-here":
+        logger.warning("⚠️  OPENAI_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.")

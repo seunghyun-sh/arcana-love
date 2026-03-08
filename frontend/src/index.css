@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --night: #1a0b2e;
+  --night-deep: #0f0720;
+  --lavender: #e9d5ff;
+  --mystic-gold: #fbbf24;
+  color: #e9d5ff;
+  background: #1a0b2e;
+  font-family: Manrope, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #1a0b2e;
+}
+
+button {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ─── Starfield background ─── */
+.bg-starfield {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(139,92,246,0.18), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(251,191,36,0.08), transparent 35%),
+    radial-gradient(circle at 50% 50%, rgba(139,92,246,0.06), transparent 60%),
+    linear-gradient(180deg, #1a0b2e 0%, #0f0720 50%, #1a0b2e 100%);
+}
+
+/* ─── Floating mist orbs ─── */
+@keyframes float-mist {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.15; }
+  50% { transform: translateY(-30px) scale(1.1); opacity: 0.25; }
+}
+
+.mist-orb {
+  animation: float-mist 8s ease-in-out infinite;
+}
+
+.mist-orb-delay {
+  animation: float-mist 10s ease-in-out 3s infinite;
+}
+
+/* ─── Star twinkle ─── */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
+.star-dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #e9d5ff;
+  border-radius: 50%;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+/* ─── Card flip ─── */
+.tarot-perspective {
+  perspective: 1600px;
+}
+
+.tarot-flip-inner {
+  transform-style: preserve-3d;
+}
+
+.tarot-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.tarot-face-front {
+  transform: rotateY(180deg);
+}
+
+/* ─── Glass card ─── */
+.glass {
+  background: rgba(26, 11, 46, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(233, 213, 255, 0.1);
+}
+
+/* ─── Gold glow ─── */
+.glow-gold {
+  box-shadow: 0 0 20px rgba(251,191,36,0.3), 0 0 60px rgba(251,191,36,0.1);
+}
+
+.glow-gold-strong {
+  box-shadow: 0 0 30px rgba(251,191,36,0.5), 0 0 80px rgba(251,191,36,0.2);
+}
+
+/* ─── Violet glow ─── */
+.glow-violet {
+  box-shadow: 0 0 20px rgba(139,92,246,0.3), 0 0 60px rgba(139,92,246,0.1);
+}
+
+/* ─── Progress bar shimmer ─── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-bar {
+  background: linear-gradient(90deg, rgba(251,191,36,0.6) 0%, rgba(251,191,36,1) 50%, rgba(251,191,36,0.6) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* ─── Typing cursor ─── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cursor-blink::after {
+  content: '|';
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+  color: #fbbf24;
+}
+
+/* ─── Shuffle float ─── */
+@keyframes card-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-12px) rotate(2deg); }
+  75% { transform: translateY(8px) rotate(-1deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
