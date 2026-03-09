@@ -274,27 +274,27 @@ const CategoryStep = ({
 
 const SPREAD_OPTIONS: Record<
   LoveQuestionId,
-  { id: number; label: string; cards: number; desc: string }[]
+  { id: string; label: string; cards: number; desc: string }[]
 > = {
   situationship: [
-    { id: 1, label: '썸의 흐름 (3장)', cards: 3, desc: '나, 상대, 관계의 흐름' },
-    { id: 2, label: '숨겨진 진심과 미래 (5장)', cards: 5, desc: '나, 상대, 현재, 장애물, 결과' },
+    { id: 'some_basic', cards: 3, label: '관계의 나침반 (3장)', desc: '현재 나의 위치, 상대의 속마음, 그리고 이 관계의 향방' },
+    { id: 'some_deep', cards: 5, label: '숨겨진 진심과 미래 (5장)', desc: '엇갈린 진심, 다가올 계기, 장애물과 카드의 조언' },
   ],
   mutualThoughts: [
-    { id: 1, label: '간단 속마음 (3장)', cards: 3, desc: '나, 상대, 관계의 흐름' },
-    { id: 2, label: '깊은 속마음 (5장)', cards: 5, desc: '표면적 마음, 숨긴 진심, 방해물, 조언, 미래' },
+    { id: 'crush_basic', cards: 3, label: '그 사람의 시선 (3장)', desc: '상대가 보는 나의 모습, 무의식적 호감, 다가갈 타이밍' },
+    { id: 'crush_deep', cards: 5, label: '관계 발전의 열쇠 (5장)', desc: '두 사람 사이의 벽, 내가 취해야 할 행동, 그리고 맞이할 변화' },
   ],
   textNow: [
-    { id: 1, label: '현 상황 진단 (3장)', cards: 3, desc: '내 감정, 상대 감정, 행동의 결과' },
-    { id: 2, label: '타이밍과 조언 (4장)', cards: 4, desc: '현재, 베스트 타이밍, 조언, 결과' },
+    { id: 'contact_basic', cards: 3, label: '연락의 타이밍 (3장)', desc: '닿았을 때의 반응, 침묵했을 때의 흐름, 당장을 위한 조언' },
+    { id: 'contact_deep', cards: 5, label: '엇갈린 마음과 주파수 (5장)', desc: '지난 오해, 상대의 현재 감정, 최적의 연락 방식과 그 결과' },
   ],
   reconciliation: [
-    { id: 1, label: '재회 가능성 (3장)', cards: 3, desc: '과거, 한계, 가능성' },
-    { id: 2, label: '다시 맺는 인연 (5장)', cards: 5, desc: '나, 상대, 장애물, 노력할 점, 최종 결론' },
+    { id: 'reunion_basic', cards: 3, label: '남겨진 미련의 조각 (3장)', desc: '끊어진 인연의 이유, 상대의 그리움, 재회의 불씨' },
+    { id: 'reunion_deep', cards: 7, label: '운명의 재회선 (7장)', desc: '서로의 미련, 극복할 장벽, 다시 닿을 방법과 미래' },
   ],
   loveLuck: [
-    { id: 1, label: '올해 연애운 (3장)', cards: 3, desc: '현재의 나, 다가올 인연, 조언' },
-    { id: 2, label: '결정적 시기와 만남 (5장)', cards: 5, desc: '현재, 다가올 인연, 장소/시기, 주의점, 결과' },
+    { id: 'luck_3months', cards: 3, label: '계절의 연애 흐름 (3장)', desc: '한 달, 두 달, 세 달 뒤… 내게 다가올 인연의 모습' },
+    { id: 'luck_soulmate', cards: 5, label: '운명의 붉은 실 (5장)', desc: '나의 연애 성향, 운명의 짝의 특징, 피해야 할 인연과 기회' },
   ],
 };
 
@@ -363,15 +363,15 @@ const SituationStep = ({
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5, ease: easeOut }}
-            className="flex w-full max-w-xl flex-col items-center"
+            className="flex w-full max-w-2xl flex-col items-center"
           >
-            <div className="relative w-full max-w-xl">
+            <div className="relative w-full max-w-2xl">
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value.slice(0, maxLen))}
                 maxLength={maxLen}
                 placeholder={`마음속 깊은 곳에 담아두었던 이야기를\n이곳에 조용히 털어놓아 보세요.\n\n당신의 진심이 담긴 문장들이 별빛이 되어\n운명의 카드를 정확한 곳으로 이끌어 줄 거예요.\n두서없는 사소한 감정들까지 모두 적어주셔도 좋습니다...`}
-                className="h-48 w-full resize-none rounded-2xl border border-purple-500/30 bg-[#1e1136]/60 p-6 leading-relaxed text-purple-100 placeholder-purple-400/40 backdrop-blur-md transition-all focus:border-amber-400/70 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
+                className="h-56 w-full resize-none rounded-2xl border border-purple-500/30 bg-[#1e1136]/60 p-6 leading-relaxed text-purple-100 placeholder-purple-400/40 backdrop-blur-md transition-all focus:border-amber-400/70 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
               />
               <div className="absolute bottom-4 right-6 text-sm font-light transition-colors duration-300">
                 <span
@@ -388,30 +388,30 @@ const SituationStep = ({
             </div>
 
             {/* Spread Options */}
-            <div className="mt-8 flex w-full flex-col gap-4 sm:flex-row">
+            <div className="mt-8 flex w-full flex-col gap-5 sm:flex-row">
               {currentOptions.map((opt) => {
                 const isSelected = selectedSpread === opt.cards;
                 return (
                   <button
                     key={opt.id}
                     onClick={() => setSelectedSpread(opt.cards)}
-                    className={`flex flex-1 flex-col items-start justify-center rounded-xl border p-4 text-left transition-all ${
+                    className={`flex flex-1 flex-col items-start justify-center rounded-2xl border p-5 text-left transition-all ${
                       isSelected
                         ? 'border-amber-400/70 bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.15)]'
                         : 'border-purple-500/30 bg-[#1e1136]/40 hover:border-amber-400/40 hover:bg-purple-500/20'
                     }`}
                   >
                     <div className="flex w-full items-center justify-between">
-                      <h4 className={`text-base font-medium ${isSelected ? 'text-amber-300' : 'text-purple-200'}`}>
+                      <h4 className={`text-lg font-medium ${isSelected ? 'text-amber-300' : 'text-purple-200'}`}>
                         {opt.label}
                       </h4>
                       {isSelected && (
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] text-night">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-xs text-night">
                           ✓
                         </span>
                       )}
                     </div>
-                    <p className={`mt-2 text-xs font-light ${isSelected ? 'text-amber-400/80' : 'text-purple-300/60'}`}>
+                    <p className={`mt-3 text-sm font-light leading-relaxed ${isSelected ? 'text-amber-400/80' : 'text-purple-300/60'}`}>
                       {opt.desc}
                     </p>
                   </button>
