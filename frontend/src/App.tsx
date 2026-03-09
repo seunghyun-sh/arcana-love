@@ -208,76 +208,138 @@ const CategoryStep = ({
   onSelect: (id: LoveQuestionId) => void;
 }) => (
   <PageWrap k="category">
-    <div className="w-full max-w-2xl">
+    <div className="flex w-full flex-col items-center justify-center pb-20">
       <motion.h2
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: easeOut }}
-        className="mb-8 text-center font-display text-4xl text-lavender sm:text-5xl"
+        className="mb-16 text-center font-display text-3xl text-purple-100 drop-shadow-md sm:text-4xl"
       >
         어떤 이야기가 궁금하세요?
       </motion.h2>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {LOVE_QUESTIONS.map((q, i) => (
-          <motion.button
-            key={q.id}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08, duration: 0.5, ease: easeOut }}
-            whileHover={{ scale: 1.03, y: -4 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onSelect(q.id)}
-            className="glass group rounded-2xl p-5 text-left transition-shadow hover:glow-gold"
-          >
-            <span className="text-2xl">{CATEGORY_EMOJI[q.id]}</span>
-            <h3 className="mt-3 font-display text-2xl text-lavender group-hover:text-amber-300">
-              {CATEGORY_QUESTION[q.id]}
-            </h3>
-            <p className="mt-2 text-sm text-lavender/50">{q.subtitle}</p>
-          </motion.button>
-        ))}
+      <div className="relative flex h-[450px] w-full max-w-6xl items-end justify-center pb-16">
+        {LOVE_QUESTIONS.map((q, index) => {
+          const offsetIndex = index - 2;
+          const rotation = offsetIndex * 22;
+          const xOffset = offsetIndex * 130;
+          const yOffset = Math.abs(offsetIndex) * 35;
+
+          return (
+            <motion.button
+              key={q.id}
+              onClick={() => onSelect(q.id)}
+              initial={{ opacity: 0, y: 50, x: -300, rotate: -45, scale: 0.8 }}
+              animate={{ opacity: 1, y: yOffset, x: xOffset, rotate: rotation, scale: 1 }}
+              transition={{
+                duration: 1.2,
+                delay: index * 0.15 + 0.3,
+                ease: [0.16, 1, 0.3, 1], // easeOutQuint 느낌으로 부드럽게
+              }}
+              whileHover={{
+                y: yOffset - 30,
+                scale: 1.05,
+                zIndex: 50,
+                boxShadow: '0px 0px 20px 5px rgba(251, 191, 36, 0.4)',
+              }}
+              style={{
+                transformOrigin: 'bottom center',
+                zIndex: 10 - Math.abs(offsetIndex),
+              }}
+              className="group absolute flex h-80 w-64 cursor-pointer flex-col items-center justify-start rounded-2xl border border-purple-500/40 bg-[#1e1136]/90 p-6 text-left backdrop-blur-md"
+            >
+              <div className="mb-4 text-3xl transition-transform group-hover:scale-110">
+                {CATEGORY_EMOJI[q.id]}
+              </div>
+              <h3 className="mb-3 break-keep text-center text-lg font-medium text-purple-100">
+                {CATEGORY_QUESTION[q.id]}
+              </h3>
+              <p className="break-keep text-center text-sm font-light text-purple-300/80">
+                {q.subtitle}
+              </p>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl text-amber-500/20">
+                ✧
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   </PageWrap>
 );
 
 /* ────────────────────────────────────────────
-   Step 3 — Situation Input
+   Step 3 — Situation Input & Spread Option
    ──────────────────────────────────────────── */
+
+const SPREAD_OPTIONS: Record<
+  LoveQuestionId,
+  { id: number; label: string; cards: number; desc: string }[]
+> = {
+  situationship: [
+    { id: 1, label: '썸의 흐름 (3장)', cards: 3, desc: '나, 상대, 관계의 흐름' },
+    { id: 2, label: '숨겨진 진심과 미래 (5장)', cards: 5, desc: '나, 상대, 현재, 장애물, 결과' },
+  ],
+  mutualThoughts: [
+    { id: 1, label: '간단 속마음 (3장)', cards: 3, desc: '나, 상대, 관계의 흐름' },
+    { id: 2, label: '깊은 속마음 (5장)', cards: 5, desc: '표면적 마음, 숨긴 진심, 방해물, 조언, 미래' },
+  ],
+  textNow: [
+    { id: 1, label: '현 상황 진단 (3장)', cards: 3, desc: '내 감정, 상대 감정, 행동의 결과' },
+    { id: 2, label: '타이밍과 조언 (4장)', cards: 4, desc: '현재, 베스트 타이밍, 조언, 결과' },
+  ],
+  reconciliation: [
+    { id: 1, label: '재회 가능성 (3장)', cards: 3, desc: '과거, 한계, 가능성' },
+    { id: 2, label: '다시 맺는 인연 (5장)', cards: 5, desc: '나, 상대, 장애물, 노력할 점, 최종 결론' },
+  ],
+  loveLuck: [
+    { id: 1, label: '올해 연애운 (3장)', cards: 3, desc: '현재의 나, 다가올 인연, 조언' },
+    { id: 2, label: '결정적 시기와 만남 (5장)', cards: 5, desc: '현재, 다가올 인연, 장소/시기, 주의점, 결과' },
+  ],
+};
 
 const SituationStep = ({
   question,
   onSubmit,
 }: {
   question: QuestionOption;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string, spreadCards: number) => void;
 }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
-  const maxLen = 200;
+  const [selectedSpread, setSelectedSpread] = useState<number | null>(null);
+  const maxLen = 1000;
+
+  const currentOptions = SPREAD_OPTIONS[question.id] || SPREAD_OPTIONS['situationship'];
+
+  // 기본으로 3장인 첫 번째 옵션 선택
+  useEffect(() => {
+    if (currentOptions.length > 0 && selectedSpread === null) {
+      setSelectedSpread(currentOptions[0].cards);
+    }
+  }, [currentOptions, selectedSpread]);
 
   const handleSubmit = () => {
-    if (text.trim().length < 2) return;
+    if (text.trim().length < 5 || selectedSpread === null) return;
     setLoading(true);
-    setTimeout(() => onSubmit(text.trim()), 800);
+    setTimeout(() => onSubmit(text.trim(), selectedSpread), 800);
   };
 
   return (
     <PageWrap k="situation">
-      <div className="w-full max-w-lg">
+      <div className="flex w-full min-h-[80vh] flex-col items-center justify-center space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: easeOut }}
-          className="text-center"
+          className="mb-4 flex flex-col items-center space-y-2 text-center"
         >
-          <span className="text-3xl">{CATEGORY_EMOJI[question.id]}</span>
-          <h2 className="mt-4 font-display text-3xl text-lavender sm:text-4xl">
+          <span className="mb-2 text-3xl">{CATEGORY_EMOJI[question.id]}</span>
+          <h2 className="font-display text-3xl text-purple-100 drop-shadow-md sm:text-4xl">
             {CATEGORY_QUESTION[question.id]}
           </h2>
-          <p className="mt-3 text-sm text-lavender/50">
-            지금 상황을 자유롭게 적어주세요
+          <p className="text-center text-sm font-light text-purple-300/80">
+            당신의 이야기를 어떤 깊이로 비춰주길 원하시나요?
           </p>
         </motion.div>
 
@@ -301,29 +363,66 @@ const SituationStep = ({
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5, ease: easeOut }}
-            className="mt-8"
+            className="flex w-full max-w-xl flex-col items-center"
           >
-            <div className="glass rounded-2xl p-4">
+            <div className="relative w-full max-w-xl">
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value.slice(0, maxLen))}
-                placeholder="최근에 연락이 뜸해졌어요..."
-                rows={4}
-                className="w-full resize-none bg-transparent text-base text-lavender placeholder:text-lavender/30 focus:outline-none"
+                maxLength={maxLen}
+                placeholder={`마음속 깊은 곳에 담아두었던 이야기를\n이곳에 조용히 털어놓아 보세요.\n\n당신의 진심이 담긴 문장들이 별빛이 되어\n운명의 카드를 정확한 곳으로 이끌어 줄 거예요.\n두서없는 사소한 감정들까지 모두 적어주셔도 좋습니다...`}
+                className="h-48 w-full resize-none rounded-2xl border border-purple-500/30 bg-[#1e1136]/60 p-6 leading-relaxed text-purple-100 placeholder-purple-400/40 backdrop-blur-md transition-all focus:border-amber-400/70 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
               />
-              <div className="mt-2 text-right text-xs text-lavender/40">
-                {text.length}/{maxLen}
+              <div className="absolute bottom-4 right-6 text-sm font-light transition-colors duration-300">
+                <span
+                  className={
+                    text.length >= maxLen
+                      ? 'text-amber-400'
+                      : 'text-purple-400/60'
+                  }
+                >
+                  {text.length}
+                </span>
+                <span className="text-purple-400/40"> / {maxLen}</span>
               </div>
+            </div>
+
+            {/* Spread Options */}
+            <div className="mt-8 flex w-full flex-col gap-4 sm:flex-row">
+              {currentOptions.map((opt) => {
+                const isSelected = selectedSpread === opt.cards;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setSelectedSpread(opt.cards)}
+                    className={`flex flex-1 flex-col items-start justify-center rounded-xl border p-4 text-left transition-all ${
+                      isSelected
+                        ? 'border-amber-400/70 bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.15)]'
+                        : 'border-purple-500/30 bg-[#1e1136]/40 hover:border-amber-400/40 hover:bg-purple-500/20'
+                    }`}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <h4 className={`text-base font-medium ${isSelected ? 'text-amber-300' : 'text-purple-200'}`}>
+                        {opt.label}
+                      </h4>
+                      {isSelected && (
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] text-night">
+                          ✓
+                        </span>
+                      )}
+                    </div>
+                    <p className={`mt-2 text-xs font-light ${isSelected ? 'text-amber-400/80' : 'text-purple-300/60'}`}>
+                      {opt.desc}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
 
             <button
               onClick={handleSubmit}
-              disabled={text.trim().length < 2}
-              className={`mt-6 w-full rounded-full py-4 text-center font-semibold transition ${
-                text.trim().length >= 2
-                  ? 'bg-amber-400 text-night shadow-gold hover:scale-[1.02] hover:shadow-gold-strong'
-                  : 'cursor-not-allowed bg-lavender/10 text-lavender/30'
-              }`}
+              disabled={text.trim().length < 5 || selectedSpread === null}
+              className="mt-8 rounded-full border border-purple-500/50 bg-purple-600/40 px-10 py-4 text-lg tracking-wide text-purple-100 transition-all duration-300 hover:border-amber-400/60 hover:bg-purple-500/40 hover:text-amber-200 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)] disabled:cursor-not-allowed disabled:opacity-30"
             >
               카드 섞기
             </button>
@@ -340,9 +439,13 @@ const SituationStep = ({
 
 const ShuffleStep = ({ onDone }: { onDone: () => void }) => {
   useEffect(() => {
-    const t = setTimeout(onDone, 3000);
+    // 셔플 연출을 조금 더 길게(4.5초) 보여줍니다.
+    const t = setTimeout(onDone, 4500);
     return () => clearTimeout(t);
   }, [onDone]);
+
+  // 카드를 두 그룹으로 나누어 섞는 듯한(Riffle Shuffle) 연출을 위한 배열
+  const cards = Array.from({ length: 14 });
 
   return (
     <PageWrap k="shuffle">
@@ -351,50 +454,67 @@ const ShuffleStep = ({ onDone }: { onDone: () => void }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="mb-10 font-display text-3xl text-lavender sm:text-4xl"
+          className="mb-16 font-display text-3xl text-lavender sm:text-4xl"
         >
-          카드를 섞고 있습니다...
+          운명의 카드를 섞고 있습니다...
         </motion.h2>
 
-        <div className="relative h-64 w-80">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{
-                x: 0,
-                y: 0,
-                rotate: 0,
-                opacity: 0,
-              }}
-              animate={{
-                x: [(i - 3) * 20, (i - 3) * 35, (i - 3) * 15, (i - 3) * 25],
-                y: [0, -20 + i * 5, 10, 0],
-                rotate: [(i - 3) * 3, (i - 3) * -5, (i - 3) * 4, (i - 3) * 2],
-                opacity: 1,
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: i * 0.08,
-              }}
-              className="absolute left-1/2 top-1/2 h-48 w-32 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-amber-400/30 bg-gradient-to-b from-night-deep to-night p-3 shadow-gold"
-            >
-              <div className="flex h-full items-center justify-center rounded-xl border border-lavender/10 bg-lavender/[0.03]">
-                <span className="font-display text-3xl text-lavender/40">LT</span>
-              </div>
-            </motion.div>
-          ))}
+        <div className="relative flex h-64 w-full max-w-[320px] items-center justify-center">
+          {cards.map((_, i) => {
+            const isLeft = i % 2 === 0;
+            // 초기 위치: 양쪽으로 갈라져 있는 상태
+            const startX = isLeft ? -120 : 120;
+            const startY = isLeft ? 10 : -10;
+            const startRotate = isLeft ? -15 : 15;
+
+            return (
+              <motion.div
+                key={i}
+                initial={{
+                  x: 0,
+                  y: 0,
+                  rotate: 0,
+                  opacity: 0,
+                  scale: 0.8,
+                }}
+                animate={{
+                  x: [0, startX, 0, (i % 3 - 1) * 10],
+                  y: [0, startY, 0, (i % 3 - 1) * 5],
+                  rotate: [0, startRotate, 0, (i % 3 - 1) * 3],
+                  scale: [1, 1, 1, 1],
+                  opacity: 1,
+                  zIndex: [1, isLeft ? i : 20 - i, i, i],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: 2, // 3번 반복 후 (총 4.5초) 넘어감
+                  ease: 'easeInOut',
+                  times: [0, 0.4, 0.8, 1],
+                  delay: i * 0.05,
+                }}
+                className="absolute h-48 w-32 rounded-2xl border border-amber-400/30 bg-gradient-to-b from-night-deep to-night p-3 shadow-gold"
+              >
+                <div className="flex h-full items-center justify-center rounded-xl border border-lavender/10 bg-[url('/love-tarot-mark.svg')] bg-center bg-no-repeat opacity-50 bg-blend-overlay">
+                  <Star className="text-amber-400/20" size={32} />
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
 
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 1, 0] }}
-          transition={{ duration: 3, times: [0, 0.2, 0.8, 1] }}
-          className="mt-8 text-sm text-lavender/50"
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 1 }}
+          className="mt-12 flex items-center gap-3"
         >
-          당신의 에너지를 카드에 담고 있어요
-        </motion.p>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+            className="h-5 w-5 rounded-full border border-amber-400/30 border-t-amber-400"
+          />
+          <span className="text-sm text-lavender/60">당신의 이야기를 카드에 담는 중</span>
+        </motion.div>
       </div>
     </PageWrap>
   );
@@ -406,8 +526,10 @@ const ShuffleStep = ({ onDone }: { onDone: () => void }) => {
 
 const SelectionStep = ({
   onComplete,
+  onFirstSelect,
 }: {
   onComplete: (cards: TarotCard[]) => void;
+  onFirstSelect: () => void;
 }) => {
   const [pool] = useState(() => shuffleCards(MAJOR_ARCANA_CARDS).slice(0, 7));
   const [selected, setSelected] = useState<number[]>([]);
@@ -416,6 +538,7 @@ const SelectionStep = ({
     if (selected.includes(idx)) {
       setSelected((s) => s.filter((i) => i !== idx));
     } else if (selected.length < 3) {
+      if (selected.length === 0) onFirstSelect();
       const next = [...selected, idx];
       setSelected(next);
       if (next.length === 3) {
@@ -433,14 +556,31 @@ const SelectionStep = ({
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: easeOut }}
-          className="mb-8 text-center"
+          className="mb-8 flex flex-col items-center space-y-4 text-center"
         >
-          <h2 className="font-display text-3xl text-lavender sm:text-4xl">
+          <h2 className="font-display text-3xl text-purple-100 drop-shadow-md sm:text-4xl">
             세 장의 카드를 선택하세요
           </h2>
-          <p className="mt-3 text-sm text-lavender/50">
-            직감이 이끄는 대로, 마음이 가는 카드를 골라보세요 ({selected.length}/3)
+          <p className="text-center text-sm font-light text-purple-300/80">
+            직감이 이끄는 대로, 마음이 가는 카드를 골라보세요 ({selected.length}
+            /3)
           </p>
+
+          {/* 오글거리는 긴장감 멘트 */}
+          <AnimatePresence>
+            {selected.length === 0 && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-2 animate-pulse text-center text-xs font-light tracking-wide text-amber-500/90 md:text-sm"
+              >
+                * 한 번 카드를 선택하면 이전 단계로 돌아가지 못합니다.
+                <br />
+                진심을 다해 마음으로 카드를 골라주세요.
+              </motion.p>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         <div className="flex flex-wrap justify-center gap-4">
@@ -892,6 +1032,20 @@ const App = () => {
   const [aiReading, setAiReading] = useState<AIReading | null>(null);
   const [localReading, setLocalReading] = useState<LoveReading | null>(null);
 
+  // 진행 상태 관리를 위한 선택된 카드 수 (Step 5용)
+  // (SelectionStep은 내부 state를 쓰지만, 전역 뒤로가기를 위해 selectedCards.length를 활용)
+
+  // ── 뒤로 가기 핸들러 ──
+  const handleGoBack = useCallback(() => {
+    setStep((prev) => {
+      if (prev === 2) return 1; // Category -> Intro
+      if (prev === 3) return 2; // Situation -> Category
+      if (prev === 4) return 3; // Shuffle -> Situation
+      if (prev === 5) return 3; // Selection -> Situation (카드 선택 전이라면)
+      return prev;
+    });
+  }, []);
+
   // ── Background music ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -964,11 +1118,13 @@ const App = () => {
     setStep(3);
   };
 
-  const handleSubmitSituation = (text: string) => {
+  const handleSubmitSituation = (text: string, spreadCards: number) => {
     setSituation(text);
+    // 향후 백엔드에 spreadCards(리딩 깊이) 정보도 함께 넘길 수 있도록 확장 가능
     if (questionId) {
       fetchAiReading(questionId, text);
     }
+    // 선택된 카드 수에 맞춰 향후 SelectionStep 등에서 카드 개수를 조정하려면 App state로 관리해야 합니다
     setStep(4);
   };
 
@@ -1010,9 +1166,22 @@ const App = () => {
     setStep(0);
   };
 
+  const [hasSelectedCard, setHasSelectedCard] = useState(false);
+  const handleFirstSelect = useCallback(() => setHasSelectedCard(true), []);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-starfield text-lavender">
       <Background />
+
+      {/* 뒤로 가기 버튼 */}
+      {step > 1 && step < 6 && !(step === 5 && hasSelectedCard) && (
+        <button
+          onClick={handleGoBack}
+          className="absolute left-6 top-8 z-50 flex items-center space-x-2 text-sm font-light text-lavender/60 transition-colors hover:text-amber-400 md:left-12 md:text-base"
+        >
+          <span>← 이전 단계로</span>
+        </button>
+      )}
 
       <AnimatePresence mode="wait">
         {step === 0 && (
@@ -1029,7 +1198,12 @@ const App = () => {
           <SituationStep question={question} onSubmit={handleSubmitSituation} />
         )}
         {step === 4 && <ShuffleStep onDone={handleShuffleDone} />}
-        {step === 5 && <SelectionStep onComplete={handleSelectionComplete} />}
+        {step === 5 && (
+          <SelectionStep
+            onComplete={handleSelectionComplete}
+            onFirstSelect={handleFirstSelect}
+          />
+        )}
         {step === 6 && (
           <RevealStep cards={selectedCards} onComplete={handleRevealComplete} />
         )}
