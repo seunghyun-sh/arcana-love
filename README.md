@@ -5,7 +5,7 @@ AI 기반 사랑 타로 리딩 웹 애플리케이션입니다. 질문 카테고
 ## Project Structure
 
 ```
-acrana-love/
+arcana-love/
 ├── frontend/          ← React + Vite + TypeScript + Tailwind + Framer Motion
 │   ├── src/
 │   ├── public/

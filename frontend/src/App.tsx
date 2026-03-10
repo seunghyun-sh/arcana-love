@@ -179,7 +179,7 @@ const IntroStep = ({ onNext }: { onNext: () => void }) => (
         transition={{ delay: 0.4, duration: 0.6, ease: easeOut }}
         className="mt-6 max-w-md text-base leading-relaxed text-lavender/60"
       >
-        세 장의 메이저 아르카나가 당신의 사랑 이야기를 읽어드립니다.
+        아르카나가 당신의 사랑 이야기를 읽어드립니다.
         <br />
         지금 마음속을 가장 크게 차지하는 질문을 떠올려보세요.
       </motion.p>

@@ -5,7 +5,7 @@ from app.core.config import settings
 
 
 def setup_logging() -> logging.Logger:
-    logger = logging.getLogger("acrana")
+    logger = logging.getLogger("arcana")
     logger.setLevel(settings.log_level.upper())
 
     if not logger.handlers:

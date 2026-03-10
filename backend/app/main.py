@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.logging import logger
 
 app = FastAPI(
-    title="Acrana Love — AI Tarot API",
+    title="Arcana Love — AI Tarot API",
     description="AI 기반 사랑 타로 리딩 백엔드",
     version="0.1.0",
 )
@@ -35,6 +35,6 @@ async def health_check():
 
 @app.on_event("startup")
 async def on_startup():
-    logger.info("🔮 Acrana Love API 시작")
+    logger.info("🔮 Arcana Love API 시작")
     if not settings.openai_api_key or settings.openai_api_key == "your-openai-api-key-here":
         logger.warning("⚠️  OPENAI_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.")
