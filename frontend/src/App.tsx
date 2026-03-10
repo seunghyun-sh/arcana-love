@@ -574,6 +574,7 @@ const SelectionStep = ({
 }) => {
   const [revealedCount, setRevealedCount] = useState(0);
   const [selectedFanIndices, setSelectedFanIndices] = useState<Set<number>>(new Set());
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const totalFanCards = 78;
   const targetCount = drawData.drawnCards.length;
   const allRevealed = revealedCount >= targetCount;
@@ -686,45 +687,89 @@ const SelectionStep = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="relative mx-auto h-[260px] w-full max-w-3xl sm:h-[300px]"
+            className="relative mx-auto mt-12 pt-16 h-[380px] w-full max-w-5xl sm:h-[450px]"
           >
             {Array.from({ length: totalFanCards }).map((_, i) => {
+              const SPREAD_ANGLE = 135; // 135도 각도로 넓게 펼치기
+              const anglePerCard = SPREAD_ANGLE / totalFanCards;
+              // 정중앙을 기준으로 좌우 각도 계산
+              const angle = (i - (totalFanCards - 1) / 2) * anglePerCard;
+              
               const isSelected = selectedFanIndices.has(i);
-              const angle = ((i - (totalFanCards - 1) / 2) / ((totalFanCards - 1) / 2)) * 70;
+              const isHovered = hoveredIndex === i;
+              const isOtherHovered = hoveredIndex !== null && !isHovered;
+
               return (
                 <motion.button
                   key={i}
                   type="button"
                   onClick={() => handleFanCardClick(i)}
+                  onPointerEnter={() => !isSelected && setHoveredIndex(i)}
+                  onPointerLeave={() => setHoveredIndex(null)}
                   disabled={isSelected}
-                  initial={{ opacity: 0, scale: 0.7 }}
+                  // 1. 부모(hitbox): 카드의 배열 궤도와 zIndex를 고정. 호버 시 형태나 위치가 변하지 않아 '와다다다' 현상 해결.
+                  initial={{ opacity: 0, rotate: angle, y: 50 }}
                   animate={{
-                    opacity: isSelected ? 0.12 : 1,
-                    scale: isSelected ? 0.85 : 1,
+                    opacity: 1,
+                    rotate: angle, // 궤도 유지
+                    y: 0, // 기본 위치 유지 (호버해도 안 움직임)
+                    zIndex: isHovered ? 100 : 50 - Math.abs(i - Math.floor(totalFanCards / 2)),
                   }}
-                  whileHover={!isSelected ? { y: -18, scale: 1.15, zIndex: 100 } : undefined}
-                  whileTap={!isSelected ? { scale: 0.95 } : undefined}
-                  transition={{ delay: i * 0.006, duration: 0.25 }}
-                  className="absolute bottom-0 left-1/2 origin-bottom"
+                  transition={{ 
+                    delay: i * 0.005, 
+                    duration: 0.5,
+                    ease: "easeOut" 
+                  }}
+                  className="absolute left-1/2 top-4 group outline-none"
                   style={{
-                    width: 40,
-                    height: 60,
-                    marginLeft: -20,
-                    transform: `rotate(${angle}deg) translateY(-220px)`,
-                    zIndex: isSelected ? 0 : 50 - Math.abs(i - 39),
+                    width: 50,
+                    height: 85,
+                    marginLeft: -25, // 중앙 정렬 (width의 절반)
+                    transformOrigin: "center 500px", // ⭐ 마법의 핵심
                   }}
                 >
-                  <div className={`h-full w-full rounded-md border transition-colors ${
-                    isSelected
-                      ? 'border-lavender/5 bg-lavender/5'
-                      : 'border-amber-400/30 bg-gradient-to-b from-[#1e1136] to-night shadow-[0_1px_6px_rgba(0,0,0,0.4)] hover:border-amber-400/70'
-                  }`}>
+                  {/* 2. 자식(visual): 실제 카드 아트워크. 여기서 이동(y), 스케일(scale) 등을 처리 */}
+                  <motion.div 
+                    initial={false}
+                    animate={{
+                      opacity: isSelected ? 0 : isOtherHovered ? 0.35 : 1,
+                      scale: isSelected ? 0.85 : isHovered ? 1.2 : 1,
+                      y: isHovered ? -40 : 0, // ⭐ 시각적 요소만 위로 올라감 (히트박스 이탈 안됨)
+                      filter: isOtherHovered && !isSelected ? 'blur(3px) grayscale(60%)' : 'blur(0px) grayscale(0%)',
+                    }}
+                    whileTap={!isSelected ? { scale: 0.95 } : undefined}
+                    transition={{
+                      delay: isHovered ? 0.05 : 0, // ⭐ 스치기 방지 50ms 딜레이
+                      duration: isHovered ? 0.25 : 0.4,
+                      ease: "easeOut" 
+                    }}
+                    className={`relative h-full w-full rounded-md border transition-colors ${
+                      isSelected
+                        ? 'border-lavender/5 bg-transparent'
+                        : isHovered
+                          ? 'border-amber-300 bg-gradient-to-b from-purple-800 to-indigo-900 shadow-[0_0_20px_rgba(251,191,36,0.6),0_0_40px_rgba(168,85,247,0.4)] ring-1 ring-amber-400'
+                          : 'border-amber-400/30 bg-gradient-to-b from-[#1e1136] to-night shadow-[0_2px_8px_rgba(0,0,0,0.6)]'
+                    }`}
+                  >
                     {!isSelected && (
                       <div className="flex h-full items-center justify-center">
-                        <span className="text-[7px] text-amber-400/25">✦</span>
+                        <span className={`text-[10px] transition-colors duration-300 ${isHovered ? 'animate-pulse text-amber-200' : 'text-amber-400/30'}`}>✦</span>
                       </div>
                     )}
-                  </div>
+                    
+                    {/* Tooltip for Hovered Card */}
+                    {isHovered && !isSelected && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="pointer-events-none absolute -top-14 left-1/2 flex -translate-x-1/2 flex-col items-center justify-center rounded-lg bg-night/80 px-2.5 py-1.5 shadow-xl backdrop-blur-md border border-amber-400/40"
+                      >
+                        <span className="text-xl leading-none -mt-1 drop-shadow-md">👆</span>
+                        <span className="mt-1 whitespace-nowrap text-[10px] font-medium tracking-wide text-amber-300 drop-shadow-sm">터치하여 선택</span>
+                      </motion.div>
+                    )}
+                  </motion.div>
                 </motion.button>
               );
             })}

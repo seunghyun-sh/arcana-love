@@ -32,8 +32,8 @@ def _pick_random_cards(count: int) -> list[FullDeckCard]:
 
 
 def _random_reversed() -> bool:
-    """약 30 % 확률로 역방향."""
-    return secrets.randbelow(100) < 30
+    """50% 확률로 역방향 부여 (완전 무작위)."""
+    return secrets.choice([True, False])
 
 
 def draw_cards(spread_id: str) -> DrawResponse:
