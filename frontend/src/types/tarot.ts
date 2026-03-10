@@ -53,3 +53,31 @@ export interface LoveReading {
   positionInterpretations: PositionInterpretation[];
 }
 
+// ── Draw API (POST /api/tarot/draw) ──
+
+export interface DrawCardInfo {
+  id: string;
+  nameKor: string;
+  nameEng: string;
+  arcanaType: 'major' | 'minor';
+  isReversed: boolean;
+}
+
+export interface DrawPosition {
+  position: number;
+  positionDesc: string;
+  card: DrawCardInfo;
+}
+
+export interface DrawData {
+  drawId: string;
+  spreadId: string;
+  spreadName: string;
+  drawnCards: DrawPosition[];
+}
+
+export interface DrawResponse {
+  success: boolean;
+  data: DrawData;
+}
+

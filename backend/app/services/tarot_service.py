@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.domain.categories import LOVE_CATEGORIES, LoveCategory
-from app.domain.tarot_cards import MAJOR_ARCANA, TarotCard
+from app.domain.tarot_cards import ALL_CARDS, TarotCard
 from app.schemas.request import TarotReadingRequest
 from app.schemas.response import CardReading, CategoryInfo, TarotReadingResponse
 from app.services.openai_service import generate_tarot_reading
@@ -36,7 +36,7 @@ class TarotService:
         logger.info("리딩 시작: category=%s", category.id)
 
         # 2. 랜덤 카드 선택
-        cards = select_random_cards(MAJOR_ARCANA, count=3)
+        cards = select_random_cards(ALL_CARDS, count=3)
         logger.info(
             "카드 선택: %s",
             [f"{c.korean_name}({c.english_name})" for c in cards],

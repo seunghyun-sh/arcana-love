@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LOVE_QUESTIONS } from './data/questions';
-import { MAJOR_ARCANA_CARDS } from './data/tarotCards';
 import type {
+  DrawData,
+  DrawResponse,
   DrawnCard,
   LoveQuestionId,
   LoveReading,
@@ -22,7 +23,7 @@ import type {
   TarotCard,
 } from './types/tarot';
 import { createLoveReading } from './utils/reading';
-import { SPREAD_POSITIONS, shuffleCards } from './utils/tarot';
+import { SPREAD_POSITIONS } from './utils/tarot';
 
 /* ────────────────────────────────────────────
    Constants & Types
@@ -303,26 +304,26 @@ const SituationStep = ({
   onSubmit,
 }: {
   question: QuestionOption;
-  onSubmit: (text: string, spreadCards: number) => void;
+  onSubmit: (text: string, spreadId: string) => void;
 }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedSpread, setSelectedSpread] = useState<number | null>(null);
+  const [selectedSpreadId, setSelectedSpreadId] = useState<string | null>(null);
   const maxLen = 1000;
 
   const currentOptions = SPREAD_OPTIONS[question.id] || SPREAD_OPTIONS['situationship'];
 
-  // 기본으로 3장인 첫 번째 옵션 선택
+  // 기본으로 첫 번째 옵션 선택
   useEffect(() => {
-    if (currentOptions.length > 0 && selectedSpread === null) {
-      setSelectedSpread(currentOptions[0].cards);
+    if (currentOptions.length > 0 && selectedSpreadId === null) {
+      setSelectedSpreadId(currentOptions[0].id);
     }
-  }, [currentOptions, selectedSpread]);
+  }, [currentOptions, selectedSpreadId]);
 
   const handleSubmit = () => {
-    if (text.trim().length < 5 || selectedSpread === null) return;
+    if (text.trim().length < 5 || selectedSpreadId === null) return;
     setLoading(true);
-    setTimeout(() => onSubmit(text.trim(), selectedSpread), 800);
+    setTimeout(() => onSubmit(text.trim(), selectedSpreadId), 800);
   };
 
   return (
@@ -390,11 +391,11 @@ const SituationStep = ({
             {/* Spread Options */}
             <div className="mt-8 flex w-full flex-col gap-5 sm:flex-row">
               {currentOptions.map((opt) => {
-                const isSelected = selectedSpread === opt.cards;
+                const isSelected = selectedSpreadId === opt.id;
                 return (
                   <button
                     key={opt.id}
-                    onClick={() => setSelectedSpread(opt.cards)}
+                    onClick={() => setSelectedSpreadId(opt.id)}
                     className={`flex flex-1 flex-col items-start justify-center rounded-2xl border p-5 text-left transition-all ${
                       isSelected
                         ? 'border-amber-400/70 bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.15)]'
@@ -421,7 +422,7 @@ const SituationStep = ({
 
             <button
               onClick={handleSubmit}
-              disabled={text.trim().length < 5 || selectedSpread === null}
+              disabled={text.trim().length < 5 || selectedSpreadId === null}
               className="mt-8 rounded-full border border-purple-500/50 bg-purple-600/40 px-10 py-4 text-lg tracking-wide text-purple-100 transition-all duration-300 hover:border-amber-400/60 hover:bg-purple-500/40 hover:text-amber-200 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)] disabled:cursor-not-allowed disabled:opacity-30"
             >
               카드 섞기
@@ -437,12 +438,17 @@ const SituationStep = ({
    Step 4 — Card Shuffle
    ──────────────────────────────────────────── */
 
-const ShuffleStep = ({ onDone }: { onDone: () => void }) => {
+const ShuffleStep = ({ onDone, isReady, hasError, onRetry }: { onDone: () => void; isReady: boolean; hasError: boolean; onRetry: () => void }) => {
+  const [animDone, setAnimDone] = useState(false);
+
   useEffect(() => {
-    // 셔플 연출을 조금 더 길게(4.5초) 보여줍니다.
-    const t = setTimeout(onDone, 4500);
+    const t = setTimeout(() => setAnimDone(true), 4500);
     return () => clearTimeout(t);
-  }, [onDone]);
+  }, []);
+
+  useEffect(() => {
+    if (animDone && isReady) onDone();
+  }, [animDone, isReady, onDone]);
 
   // 카드를 두 그룹으로 나누어 섞는 듯한(Riffle Shuffle) 연출을 위한 배열
   const cards = Array.from({ length: 14 });
@@ -513,67 +519,85 @@ const ShuffleStep = ({ onDone }: { onDone: () => void }) => {
             transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
             className="h-5 w-5 rounded-full border border-amber-400/30 border-t-amber-400"
           />
-          <span className="text-sm text-lavender/60">당신의 이야기를 카드에 담는 중</span>
+          <span className="text-sm text-lavender/60">
+            {hasError ? '서버 연결에 실패했습니다' : '당신의 이야기를 카드에 담는 중'}
+          </span>
         </motion.div>
+
+        {animDone && hasError && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 flex flex-col items-center gap-3"
+          >
+            <p className="text-sm text-rose-300/80">서버에 연결할 수 없습니다. 백엔드가 실행 중인지 확인해주세요.</p>
+            <button
+              onClick={onRetry}
+              className="rounded-full border border-amber-400/40 bg-amber-400/10 px-6 py-2.5 text-sm text-amber-400 transition hover:bg-amber-400/20"
+            >
+              다시 시도
+            </button>
+          </motion.div>
+        )}
       </div>
     </PageWrap>
   );
 };
 
 /* ────────────────────────────────────────────
-   Step 5 — Card Selection (Pick 3)
+   Step 5 — Card Selection (78-card Fan)
    ──────────────────────────────────────────── */
 
 const SelectionStep = ({
+  drawData,
   onComplete,
   onFirstSelect,
 }: {
-  onComplete: (cards: TarotCard[]) => void;
+  drawData: DrawData;
+  onComplete: () => void;
   onFirstSelect: () => void;
 }) => {
-  const [pool] = useState(() => shuffleCards(MAJOR_ARCANA_CARDS).slice(0, 7));
-  const [selected, setSelected] = useState<number[]>([]);
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [selectedFanIndices, setSelectedFanIndices] = useState<Set<number>>(new Set());
+  const totalFanCards = 78;
+  const targetCount = drawData.drawnCards.length;
+  const allRevealed = revealedCount >= targetCount;
 
-  const toggleCard = (idx: number) => {
-    if (selected.includes(idx)) {
-      setSelected((s) => s.filter((i) => i !== idx));
-    } else if (selected.length < 3) {
-      if (selected.length === 0) onFirstSelect();
-      const next = [...selected, idx];
-      setSelected(next);
-      if (next.length === 3) {
-        setTimeout(() => {
-          onComplete(next.map((i) => pool[i]));
-        }, 600);
-      }
-    }
+  const handleFanCardClick = (fanIndex: number) => {
+    if (selectedFanIndices.has(fanIndex) || allRevealed) return;
+    if (revealedCount === 0) onFirstSelect();
+    setSelectedFanIndices(prev => {
+      const next = new Set(prev);
+      next.add(fanIndex);
+      return next;
+    });
+    setRevealedCount(prev => prev + 1);
   };
 
   return (
     <PageWrap k="selection">
-      <div className="w-full max-w-3xl">
+      <div className="w-full max-w-5xl">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: easeOut }}
-          className="mb-8 flex flex-col items-center space-y-4 text-center"
+          className="mb-6 flex flex-col items-center space-y-3 text-center"
         >
           <h2 className="font-display text-3xl text-purple-100 drop-shadow-md sm:text-4xl">
-            세 장의 카드를 선택하세요
+            마음이 이끄는 카드를 골라주세요
           </h2>
-          <p className="text-center text-sm font-light text-purple-300/80">
-            직감이 이끄는 대로, 마음이 가는 카드를 골라보세요 ({selected.length}
-            /3)
+          <p className="text-sm font-light text-purple-300/80">
+            78장의 덱에서 직감이 이끄는 {targetCount}장을 터치하세요 ({revealedCount}/{targetCount})
           </p>
-
-          {/* 오글거리는 긴장감 멘트 */}
+          <p className="text-xs text-amber-400/70">{drawData.spreadName}</p>
           <AnimatePresence>
-            {selected.length === 0 && (
+            {revealedCount === 0 && (
               <motion.p
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-2 animate-pulse text-center text-xs font-light tracking-wide text-amber-500/90 md:text-sm"
+                className="mt-1 animate-pulse text-center text-xs font-light tracking-wide text-amber-500/90"
               >
                 * 한 번 카드를 선택하면 이전 단계로 돌아가지 못합니다.
                 <br />
@@ -583,53 +607,138 @@ const SelectionStep = ({
           </AnimatePresence>
         </motion.div>
 
-        <div className="flex flex-wrap justify-center gap-4">
-          {pool.map((card, i) => {
-            const isSelected = selected.includes(i);
+        {/* Spread positions — revealed cards */}
+        <div className="mb-8 flex flex-wrap justify-center gap-3">
+          {drawData.drawnCards.map((dp, i) => {
+            const isRevealed = i < revealedCount;
             return (
-              <motion.button
-                key={card.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{
-                  opacity: 1,
-                  y: isSelected ? -12 : 0,
-                  scale: isSelected ? 1.05 : 1,
-                }}
-                transition={{ delay: i * 0.06, duration: 0.4, ease: easeOut }}
-                whileHover={!isSelected && selected.length < 3 ? { y: -8, scale: 1.03 } : undefined}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => toggleCard(i)}
-                disabled={selected.length >= 3 && !isSelected}
-                className={`relative h-52 w-36 rounded-2xl border p-3 transition-all sm:h-56 sm:w-40 ${
-                  isSelected
-                    ? 'border-amber-400/70 glow-gold-strong'
-                    : 'border-lavender/15 hover:border-amber-400/30'
-                } ${selected.length >= 3 && !isSelected ? 'opacity-40' : ''}`}
-                style={{
-                  background: isSelected
-                    ? 'linear-gradient(180deg, rgba(251,191,36,0.12) 0%, rgba(26,11,46,0.9) 100%)'
-                    : 'linear-gradient(180deg, rgba(26,11,46,0.8) 0%, rgba(15,7,32,0.95) 100%)',
-                }}
+              <motion.div
+                key={dp.position}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06, duration: 0.4 }}
+                className={`flex w-32 flex-col items-center rounded-2xl border p-3 text-center transition-all sm:w-40 ${
+                  isRevealed
+                    ? 'border-amber-400/50 bg-amber-400/10 shadow-[0_0_12px_rgba(251,191,36,0.12)]'
+                    : 'border-white/10 bg-white/[0.03]'
+                }`}
               >
-                <div className="flex h-full flex-col items-center justify-center rounded-xl border border-lavender/10 bg-lavender/[0.03]">
-                  <span className="font-display text-4xl text-lavender/50">LT</span>
-                  <span className="mt-2 text-[10px] uppercase tracking-[0.3em] text-lavender/30">
-                    Card {i + 1}
-                  </span>
-                </div>
-                {isSelected && (
+                <span className="text-[10px] uppercase tracking-[0.2em] text-lavender/50">
+                  {dp.position}번 자리
+                </span>
+                <p className="mt-1 text-[11px] leading-snug text-lavender/60">{dp.positionDesc}</p>
+                {isRevealed ? (
                   <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-night"
+                    initial={{ rotateY: 90, opacity: 0 }}
+                    animate={{ rotateY: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, ease: easeOut }}
+                    className="mt-2"
                   >
-                    {selected.indexOf(i) + 1}
+                    <p className="font-display text-base text-lavender sm:text-lg">
+                      {dp.card.nameKor}
+                    </p>
+                    <p className="text-[9px] uppercase tracking-wider text-amber-400/60">
+                      {dp.card.nameEng}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1">
+                      <span className={`rounded-full px-1.5 py-0.5 text-[8px] ${
+                        dp.card.arcanaType === 'major'
+                          ? 'bg-violet/20 text-violet/90'
+                          : 'bg-emerald-400/15 text-emerald-300/90'
+                      }`}>
+                        {dp.card.arcanaType === 'major' ? 'Major' : 'Minor'}
+                      </span>
+                      {dp.card.isReversed && (
+                        <span className="rounded-full bg-rose-400/15 px-1.5 py-0.5 text-[8px] text-rose-300/90">
+                          역방향
+                        </span>
+                      )}
+                    </div>
                   </motion.div>
+                ) : (
+                  <div className="mt-2 flex h-14 items-center justify-center">
+                    <span className="text-xl text-lavender/15">?</span>
+                  </div>
                 )}
-              </motion.button>
+              </motion.div>
             );
           })}
         </div>
+
+        {/* 78-card fan */}
+        {!allRevealed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="relative mx-auto h-[260px] w-full max-w-3xl sm:h-[300px]"
+          >
+            {Array.from({ length: totalFanCards }).map((_, i) => {
+              const isSelected = selectedFanIndices.has(i);
+              const angle = ((i - (totalFanCards - 1) / 2) / ((totalFanCards - 1) / 2)) * 70;
+              return (
+                <motion.button
+                  key={i}
+                  type="button"
+                  onClick={() => handleFanCardClick(i)}
+                  disabled={isSelected}
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{
+                    opacity: isSelected ? 0.12 : 1,
+                    scale: isSelected ? 0.85 : 1,
+                  }}
+                  whileHover={!isSelected ? { y: -18, scale: 1.15, zIndex: 100 } : undefined}
+                  whileTap={!isSelected ? { scale: 0.95 } : undefined}
+                  transition={{ delay: i * 0.006, duration: 0.25 }}
+                  className="absolute bottom-0 left-1/2 origin-bottom"
+                  style={{
+                    width: 40,
+                    height: 60,
+                    marginLeft: -20,
+                    transform: `rotate(${angle}deg) translateY(-220px)`,
+                    zIndex: isSelected ? 0 : 50 - Math.abs(i - 39),
+                  }}
+                >
+                  <div className={`h-full w-full rounded-md border transition-colors ${
+                    isSelected
+                      ? 'border-lavender/5 bg-lavender/5'
+                      : 'border-amber-400/30 bg-gradient-to-b from-[#1e1136] to-night shadow-[0_1px_6px_rgba(0,0,0,0.4)] hover:border-amber-400/70'
+                  }`}>
+                    {!isSelected && (
+                      <div className="flex h-full items-center justify-center">
+                        <span className="text-[7px] text-amber-400/25">✦</span>
+                      </div>
+                    )}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </motion.div>
+        )}
+
+        {/* All revealed — proceed */}
+        <AnimatePresence>
+          {allRevealed && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="mt-6 flex flex-col items-center gap-4"
+            >
+              <p className="text-sm text-lavender/60">
+                {targetCount}장의 카드가 모두 열렸습니다
+              </p>
+              <button
+                type="button"
+                onClick={onComplete}
+                className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-8 py-4 font-semibold text-night shadow-gold transition hover:scale-105 hover:shadow-gold-strong"
+              >
+                <MessageCircleHeart size={18} />
+                리딩 결과 보기
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </PageWrap>
   );
@@ -789,6 +898,7 @@ const ResultStep = ({
   drawnCards,
   reading,
   aiReading,
+  drawData,
   onRestart,
   onHome,
 }: {
@@ -798,6 +908,7 @@ const ResultStep = ({
   drawnCards: DrawnCard[];
   reading: LoveReading | null;
   aiReading: AIReading | null;
+  drawData: DrawData | null;
   onRestart: () => void;
   onHome: () => void;
 }) => {
@@ -826,14 +937,16 @@ const ResultStep = ({
     return null;
   }, [aiReading, reading]);
 
-  if (!displayReading) return null;
+  if (!displayReading && !drawData) return null;
 
-  // Love possibility score (visual only, based on card tones)
-  const scorePercent = cards.reduce((acc, c) => {
-    if (c.tone === 'positive') return acc + 25;
-    if (c.tone === 'neutral') return acc + 15;
-    return acc + 5;
-  }, 15);
+  // Love possibility score (visual only)
+  const scorePercent = drawData
+    ? Math.max(20, 80 - drawData.drawnCards.filter(dp => dp.card.isReversed).length * 12)
+    : cards.reduce((acc, c) => {
+        if (c.tone === 'positive') return acc + 25;
+        if (c.tone === 'neutral') return acc + 15;
+        return acc + 5;
+      }, 15);
 
   const toneColors = {
     warm: 'text-rose-300',
@@ -859,18 +972,46 @@ const ResultStep = ({
             &ldquo;{situation}&rdquo;
           </p>
           <p className="mt-4 text-base leading-relaxed text-lavender/80">
-            {displayReading.summary}
+            {displayReading?.summary ?? (drawData ? `${drawData.spreadName} 스프레드로 ${drawData.drawnCards.length}장의 카드가 펼쳐졌습니다.` : '')}
           </p>
         </motion.section>
 
-        {/* 3 Cards side by side */}
+        {/* Cards display */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5, ease: easeOut }}
-          className="grid gap-5 sm:grid-cols-3"
+          className="flex flex-wrap justify-center gap-4"
         >
-          {cards.map((card, i) => (
+          {drawData ? drawData.drawnCards.map((dp, i) => (
+            <div
+              key={`${dp.position}-${dp.card.id}`}
+              className="glass w-44 rounded-2xl p-5 sm:w-52"
+            >
+              <span className="text-[10px] uppercase tracking-[0.3em] text-amber-400/60">
+                {dp.positionDesc}
+              </span>
+              <h3 className="mt-2 font-display text-2xl text-lavender">
+                {dp.card.nameKor}
+              </h3>
+              <p className="mt-1 text-xs text-amber-400/60">{dp.card.nameEng}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className={`rounded-full px-2 py-0.5 text-[9px] ${
+                  dp.card.arcanaType === 'major' ? 'bg-violet/20 text-violet' : 'bg-emerald-400/20 text-emerald-300'
+                }`}>
+                  {dp.card.arcanaType === 'major' ? 'Major' : 'Minor'}
+                </span>
+                {dp.card.isReversed && (
+                  <span className="rounded-full bg-rose-400/20 px-2 py-0.5 text-[9px] text-rose-300">역방향</span>
+                )}
+              </div>
+              {displayReading?.cardInterpretations[i] && (
+                <p className={`mt-3 text-sm leading-relaxed ${toneColors[toneStyle]}`}>
+                  {displayReading.cardInterpretations[i]}
+                </p>
+              )}
+            </div>
+          )) : cards.map((card, i) => (
             <div
               key={card.id}
               className="glass rounded-2xl p-5"
@@ -883,7 +1024,7 @@ const ResultStep = ({
               </h3>
               <p className="mt-1 text-xs text-amber-400/60">{card.englishName}</p>
               <p className={`mt-3 text-sm leading-relaxed ${toneColors[toneStyle]}`}>
-                {displayReading.cardInterpretations[i]}
+                {displayReading?.cardInterpretations[i]}
               </p>
             </div>
           ))}
@@ -898,17 +1039,17 @@ const ResultStep = ({
         >
           <h3 className="font-display text-2xl text-lavender">종합 해석</h3>
           <p className={`mt-4 text-base leading-8 ${toneColors[toneStyle]}`}>
-            {displayReading.combined}
+            {displayReading?.combined ?? '카드가 펼쳐졌습니다. 각 자리의 의미를 되새기며 스스로의 마음을 들여다보세요.'}
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-5">
             <span className="text-xs uppercase tracking-widest text-amber-400/60">오늘의 한 줄 조언</span>
             <p className="mt-2 font-display text-xl text-lavender">
-              {displayReading.advice}
+              {displayReading?.advice ?? '카드의 메시지를 가볍게 마음에 담아 두세요.'}
             </p>
           </div>
 
-          {displayReading.keyword && (
+          {displayReading?.keyword && (
             <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-violet/30 bg-violet/10 px-4 py-2">
               <Sparkles size={14} className="text-violet" />
               <span className="text-sm text-violet">{displayReading.keyword}</span>
@@ -986,7 +1127,7 @@ const ResultStep = ({
               if (navigator.share) {
                 navigator.share({
                   title: '별빛 타로방 리딩 결과',
-                  text: `${CATEGORY_QUESTION[question.id]} — ${displayReading.advice}`,
+                  text: `${CATEGORY_QUESTION[question.id]} — ${displayReading?.advice ?? ''}`,
                 }).catch(() => {});
               }
             }}
@@ -1031,6 +1172,8 @@ const App = () => {
   const [selectedCards, setSelectedCards] = useState<TarotCard[]>([]);
   const [aiReading, setAiReading] = useState<AIReading | null>(null);
   const [localReading, setLocalReading] = useState<LoveReading | null>(null);
+  const [drawData, setDrawData] = useState<DrawData | null>(null);
+  const [drawError, setDrawError] = useState(false);
 
   // 진행 상태 관리를 위한 선택된 카드 수 (Step 5용)
   // (SelectionStep은 내부 state를 쓰지만, 전역 뒤로가기를 위해 selectedCards.length를 활용)
@@ -1113,22 +1256,45 @@ const App = () => {
     [],
   );
 
+  const fetchDrawCards = useCallback(async (sid: string) => {
+    setDrawData(null);
+    setDrawError(false);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/tarot/draw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spreadId: sid }),
+      });
+      if (res.ok) {
+        const json: DrawResponse = await res.json();
+        if (json.success) {
+          setDrawData(json.data);
+          return;
+        }
+      }
+      setDrawError(true);
+    } catch {
+      setDrawError(true);
+    }
+  }, []);
+
   const handleSelectCategory = (id: LoveQuestionId) => {
     setQuestionId(id);
     setStep(3);
   };
 
-  const handleSubmitSituation = (text: string, spreadCards: number) => {
+  const handleSubmitSituation = (text: string, sid: string) => {
     setSituation(text);
-    // 향후 백엔드에 spreadCards(리딩 깊이) 정보도 함께 넘길 수 있도록 확장 가능
+    fetchDrawCards(sid);
     if (questionId) {
       fetchAiReading(questionId, text);
     }
-    // 선택된 카드 수에 맞춰 향후 SelectionStep 등에서 카드 개수를 조정하려면 App state로 관리해야 합니다
     setStep(4);
   };
 
   const handleShuffleDone = useCallback(() => setStep(5), []);
+
+  const handleDrawComplete = useCallback(() => setStep(7), []);
 
   const handleSelectionComplete = (cards: TarotCard[]) => {
     setSelectedCards(cards);
@@ -1154,6 +1320,8 @@ const App = () => {
     setSelectedCards([]);
     setAiReading(null);
     setLocalReading(null);
+    setDrawData(null);
+    setDrawError(false);
     setStep(2);
   };
 
@@ -1163,6 +1331,8 @@ const App = () => {
     setSelectedCards([]);
     setAiReading(null);
     setLocalReading(null);
+    setDrawData(null);
+    setDrawError(false);
     setStep(0);
   };
 
@@ -1197,10 +1367,11 @@ const App = () => {
         {step === 3 && question && (
           <SituationStep question={question} onSubmit={handleSubmitSituation} />
         )}
-        {step === 4 && <ShuffleStep onDone={handleShuffleDone} />}
-        {step === 5 && (
+        {step === 4 && <ShuffleStep onDone={handleShuffleDone} isReady={!!drawData} hasError={drawError} onRetry={() => { setStep(3); setDrawError(false); }} />}
+        {step === 5 && drawData && (
           <SelectionStep
-            onComplete={handleSelectionComplete}
+            drawData={drawData}
+            onComplete={handleDrawComplete}
             onFirstSelect={handleFirstSelect}
           />
         )}
@@ -1215,6 +1386,7 @@ const App = () => {
             drawnCards={drawnCards}
             reading={localReading}
             aiReading={aiReading}
+            drawData={drawData}
             onRestart={handleRestart}
             onHome={handleHome}
           />

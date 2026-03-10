@@ -35,8 +35,7 @@ async def generate_tarot_reading(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        temperature=0.8,
-        max_tokens=2000,
+        max_completion_tokens=2000,
         response_format={"type": "json_object"},
     )
 

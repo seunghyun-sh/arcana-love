@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application configuration loaded from environment variables / .env file."""
 
     openai_api_key: str = ""
-    openai_model: str = "gpt-4o"
+    openai_model: str = "gpt-5-mini"
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:5173"]
 
