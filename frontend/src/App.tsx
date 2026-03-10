@@ -1,7 +1,6 @@
-import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronRight,
-  Eye,
   Home,
   MessageCircleHeart,
   RefreshCw,
@@ -16,14 +15,9 @@ import { LOVE_QUESTIONS } from './data/questions';
 import type {
   DrawData,
   DrawResponse,
-  DrawnCard,
   LoveQuestionId,
-  LoveReading,
   QuestionOption,
-  TarotCard,
 } from './types/tarot';
-import { createLoveReading } from './utils/reading';
-import { SPREAD_POSITIONS } from './utils/tarot';
 
 /* ────────────────────────────────────────────
    Constants & Types
@@ -48,8 +42,6 @@ const CATEGORY_QUESTION: Record<LoveQuestionId, string> = {
   reconciliation: '다시 이어질 수 있을까?',
   loveLuck: '올해 연애운은 어떨까?',
 };
-
-const POSITION_LABELS = ['나의 현재', '상대의 속마음', '관계의 흐름'];
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -745,208 +737,28 @@ const SelectionStep = ({
 };
 
 /* ────────────────────────────────────────────
-   Step 6 — Card Reveal (3D Flip)
-   ──────────────────────────────────────────── */
-
-const CardFlip = ({
-  card,
-  positionLabel,
-  index,
-  isFlipped,
-  onFlip,
-}: {
-  card: TarotCard;
-  positionLabel: string;
-  index: number;
-  isFlipped: boolean;
-  onFlip: () => void;
-}) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.15, duration: 0.6, ease: easeOut }}
-      className="flex flex-col items-center gap-3"
-    >
-      <span className="text-xs uppercase tracking-[0.3em] text-amber-400/70">
-        {positionLabel}
-      </span>
-
-      <div
-        className="tarot-perspective cursor-pointer"
-        onClick={onFlip}
-      >
-        <motion.div
-          animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.8, ease: easeOut }}
-          className="tarot-flip-inner relative h-64 w-44 sm:h-72 sm:w-48"
-        >
-          {/* Back */}
-          <div className="tarot-face absolute inset-0 rounded-2xl border border-amber-400/40 bg-gradient-to-b from-night-deep to-night p-3 shadow-gold">
-            <div className="flex h-full flex-col items-center justify-center rounded-xl border border-lavender/10 bg-lavender/[0.03]">
-              <Eye size={28} className="text-lavender/40" />
-              <span className="mt-3 text-[10px] uppercase tracking-[0.3em] text-lavender/40">
-                탭하여 열기
-              </span>
-            </div>
-          </div>
-
-          {/* Front */}
-          <div className="tarot-face tarot-face-front absolute inset-0 rounded-2xl border border-amber-400/60 bg-gradient-to-b from-amber-400/10 to-night-deep p-3 glow-gold">
-            <div className="flex h-full flex-col items-center justify-center rounded-xl border border-amber-400/20 bg-night/60 p-4 text-center">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-amber-400/60">
-                Major Arcana
-              </span>
-              <h3 className="mt-3 font-display text-3xl text-lavender">
-                {card.koreanName}
-              </h3>
-              <p className="mt-2 text-xs uppercase tracking-widest text-amber-400/70">
-                {card.englishName}
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-                {card.keywords.map((kw) => (
-                  <span
-                    key={kw}
-                    className="rounded-full border border-violet/20 bg-violet/10 px-2 py-0.5 text-[9px] uppercase text-violet/80"
-                  >
-                    {kw}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-};
-
-const RevealStep = ({
-  cards,
-  onComplete,
-}: {
-  cards: TarotCard[];
-  onComplete: () => void;
-}) => {
-  const [flipped, setFlipped] = useState<boolean[]>([false, false, false]);
-  const allFlipped = flipped.every(Boolean);
-
-  const handleFlip = (idx: number) => {
-    setFlipped((f) => {
-      const next = [...f];
-      next[idx] = true;
-      return next;
-    });
-  };
-
-  return (
-    <PageWrap k="reveal">
-      <div className="w-full max-w-3xl">
-        <motion.h2
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 text-center font-display text-3xl text-lavender sm:text-4xl"
-        >
-          카드를 하나씩 터치해 뒤집어보세요
-        </motion.h2>
-
-        <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
-          {cards.map((card, i) => (
-            <CardFlip
-              key={card.id}
-              card={card}
-              positionLabel={POSITION_LABELS[i]}
-              index={i}
-              isFlipped={flipped[i]}
-              onFlip={() => handleFlip(i)}
-            />
-          ))}
-        </div>
-
-        <AnimatePresence>
-          {allFlipped && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="mt-10 flex justify-center"
-            >
-              <button
-                onClick={onComplete}
-                className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-8 py-4 font-semibold text-night shadow-gold transition hover:scale-105 hover:shadow-gold-strong"
-              >
-                <MessageCircleHeart size={18} />
-                리딩 결과 보기
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </PageWrap>
-  );
-};
-
-/* ────────────────────────────────────────────
    Step 7 — Reading Result
    ──────────────────────────────────────────── */
 
 const ResultStep = ({
   question,
   situation,
-  cards,
-  drawnCards,
-  reading,
-  aiReading,
   drawData,
   onRestart,
   onHome,
 }: {
   question: QuestionOption;
   situation: string;
-  cards: TarotCard[];
-  drawnCards: DrawnCard[];
-  reading: LoveReading | null;
-  aiReading: AIReading | null;
   drawData: DrawData | null;
   onRestart: () => void;
   onHome: () => void;
 }) => {
   const [toneStyle, setToneStyle] = useState<'warm' | 'cool' | 'mystic'>('mystic');
 
-  // Use AI reading if available, otherwise fallback to local reading
-  const displayReading = useMemo(() => {
-    if (aiReading) {
-      return {
-        summary: aiReading.input_summary,
-        combined: aiReading.combined_reading,
-        advice: aiReading.advice,
-        keyword: aiReading.keyword,
-        cardInterpretations: aiReading.cards.map((c) => c.interpretation),
-      };
-    }
-    if (reading) {
-      return {
-        summary: reading.intro,
-        combined: reading.summary,
-        advice: reading.advice,
-        keyword: reading.energyLabel,
-        cardInterpretations: reading.positionInterpretations.map((p) => p.meaning),
-      };
-    }
-    return null;
-  }, [aiReading, reading]);
-
-  if (!displayReading && !drawData) return null;
+  if (!drawData) return null;
 
   // Love possibility score (visual only)
-  const scorePercent = drawData
-    ? Math.max(20, 80 - drawData.drawnCards.filter(dp => dp.card.isReversed).length * 12)
-    : cards.reduce((acc, c) => {
-        if (c.tone === 'positive') return acc + 25;
-        if (c.tone === 'neutral') return acc + 15;
-        return acc + 5;
-      }, 15);
+  const scorePercent = Math.max(20, 80 - drawData.drawnCards.filter(dp => dp.card.isReversed).length * 12);
 
   const toneColors = {
     warm: 'text-rose-300',
@@ -972,7 +784,7 @@ const ResultStep = ({
             &ldquo;{situation}&rdquo;
           </p>
           <p className="mt-4 text-base leading-relaxed text-lavender/80">
-            {displayReading?.summary ?? (drawData ? `${drawData.spreadName} 스프레드로 ${drawData.drawnCards.length}장의 카드가 펼쳐졌습니다.` : '')}
+            {`${drawData.spreadName} 스프레드로 ${drawData.drawnCards.length}장의 카드가 펼쳐졌습니다.`}
           </p>
         </motion.section>
 
@@ -983,7 +795,7 @@ const ResultStep = ({
           transition={{ delay: 0.1, duration: 0.5, ease: easeOut }}
           className="flex flex-wrap justify-center gap-4"
         >
-          {drawData ? drawData.drawnCards.map((dp, i) => (
+          {drawData.drawnCards.map((dp) => (
             <div
               key={`${dp.position}-${dp.card.id}`}
               className="glass w-44 rounded-2xl p-5 sm:w-52"
@@ -1005,32 +817,11 @@ const ResultStep = ({
                   <span className="rounded-full bg-rose-400/20 px-2 py-0.5 text-[9px] text-rose-300">역방향</span>
                 )}
               </div>
-              {displayReading?.cardInterpretations[i] && (
-                <p className={`mt-3 text-sm leading-relaxed ${toneColors[toneStyle]}`}>
-                  {displayReading.cardInterpretations[i]}
-                </p>
-              )}
-            </div>
-          )) : cards.map((card, i) => (
-            <div
-              key={card.id}
-              className="glass rounded-2xl p-5"
-            >
-              <span className="text-[10px] uppercase tracking-[0.3em] text-amber-400/60">
-                {POSITION_LABELS[i]}
-              </span>
-              <h3 className="mt-2 font-display text-2xl text-lavender">
-                {card.koreanName}
-              </h3>
-              <p className="mt-1 text-xs text-amber-400/60">{card.englishName}</p>
-              <p className={`mt-3 text-sm leading-relaxed ${toneColors[toneStyle]}`}>
-                {displayReading?.cardInterpretations[i]}
-              </p>
             </div>
           ))}
         </motion.section>
 
-        {/* Detailed reading */}
+        {/* Reading summary */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1039,22 +830,15 @@ const ResultStep = ({
         >
           <h3 className="font-display text-2xl text-lavender">종합 해석</h3>
           <p className={`mt-4 text-base leading-8 ${toneColors[toneStyle]}`}>
-            {displayReading?.combined ?? '카드가 펼쳐졌습니다. 각 자리의 의미를 되새기며 스스로의 마음을 들여다보세요.'}
+            카드가 펼쳐졌습니다. 각 자리의 의미를 되새기며 스스로의 마음을 들여다보세요.
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-5">
             <span className="text-xs uppercase tracking-widest text-amber-400/60">오늘의 한 줄 조언</span>
             <p className="mt-2 font-display text-xl text-lavender">
-              {displayReading?.advice ?? '카드의 메시지를 가볍게 마음에 담아 두세요.'}
+              카드의 메시지를 가볍게 마음에 담아 두세요.
             </p>
           </div>
-
-          {displayReading?.keyword && (
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-violet/30 bg-violet/10 px-4 py-2">
-              <Sparkles size={14} className="text-violet" />
-              <span className="text-sm text-violet">{displayReading.keyword}</span>
-            </div>
-          )}
         </motion.section>
 
         {/* Love possibility bar */}
@@ -1127,7 +911,7 @@ const ResultStep = ({
               if (navigator.share) {
                 navigator.share({
                   title: '별빛 타로방 리딩 결과',
-                  text: `${CATEGORY_QUESTION[question.id]} — ${displayReading?.advice ?? ''}`,
+                  text: `${CATEGORY_QUESTION[question.id]} — 카드의 메시지를 가볍게 마음에 담아 두세요.`,
                 }).catch(() => {});
               }
             }}
@@ -1143,25 +927,6 @@ const ResultStep = ({
 };
 
 /* ────────────────────────────────────────────
-   AI Reading type
-   ──────────────────────────────────────────── */
-
-interface AIReading {
-  category: { id: string; label: string; question: string };
-  input_summary: string;
-  cards: Array<{
-    position: string;
-    label: string;
-    english_name: string;
-    korean_name: string;
-    interpretation: string;
-  }>;
-  combined_reading: string;
-  advice: string;
-  keyword: string;
-}
-
-/* ────────────────────────────────────────────
    Main App
    ──────────────────────────────────────────── */
 
@@ -1169,14 +934,8 @@ const App = () => {
   const [step, setStep] = useState<Step>(0);
   const [questionId, setQuestionId] = useState<LoveQuestionId | null>(null);
   const [situation, setSituation] = useState('');
-  const [selectedCards, setSelectedCards] = useState<TarotCard[]>([]);
-  const [aiReading, setAiReading] = useState<AIReading | null>(null);
-  const [localReading, setLocalReading] = useState<LoveReading | null>(null);
   const [drawData, setDrawData] = useState<DrawData | null>(null);
   const [drawError, setDrawError] = useState(false);
-
-  // 진행 상태 관리를 위한 선택된 카드 수 (Step 5용)
-  // (SelectionStep은 내부 state를 쓰지만, 전역 뒤로가기를 위해 selectedCards.length를 활용)
 
   // ── 뒤로 가기 핸들러 ──
   const handleGoBack = useCallback(() => {
@@ -1222,39 +981,9 @@ const App = () => {
     [questionId],
   );
 
-  const drawnCards: DrawnCard[] = useMemo(
-    () =>
-      selectedCards.map((card, i) => ({
-        card,
-        position: SPREAD_POSITIONS[i].id,
-        isReversed: false,
-      })),
-    [selectedCards],
-  );
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
-
-  // Fetch AI reading from backend
-  const fetchAiReading = useCallback(
-    async (category: LoveQuestionId, sit: string) => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/tarot/readings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ category, situation: sit }),
-        });
-        if (res.ok) {
-          const data: AIReading = await res.json();
-          setAiReading(data);
-        }
-      } catch {
-        // Silently fail — local reading is the fallback
-      }
-    },
-    [],
-  );
 
   const fetchDrawCards = useCallback(async (sid: string) => {
     setDrawData(null);
@@ -1286,9 +1015,6 @@ const App = () => {
   const handleSubmitSituation = (text: string, sid: string) => {
     setSituation(text);
     fetchDrawCards(sid);
-    if (questionId) {
-      fetchAiReading(questionId, text);
-    }
     setStep(4);
   };
 
@@ -1296,30 +1022,9 @@ const App = () => {
 
   const handleDrawComplete = useCallback(() => setStep(7), []);
 
-  const handleSelectionComplete = (cards: TarotCard[]) => {
-    setSelectedCards(cards);
-
-    // Build local reading as fallback
-    if (question) {
-      const drawn: DrawnCard[] = cards.map((c, i) => ({
-        card: c,
-        position: SPREAD_POSITIONS[i].id,
-        isReversed: false,
-      }));
-      setLocalReading(createLoveReading(question, drawn));
-    }
-
-    setStep(6);
-  };
-
-  const handleRevealComplete = () => setStep(7);
-
   const handleRestart = () => {
     setQuestionId(null);
     setSituation('');
-    setSelectedCards([]);
-    setAiReading(null);
-    setLocalReading(null);
     setDrawData(null);
     setDrawError(false);
     setStep(2);
@@ -1328,9 +1033,6 @@ const App = () => {
   const handleHome = () => {
     setQuestionId(null);
     setSituation('');
-    setSelectedCards([]);
-    setAiReading(null);
-    setLocalReading(null);
     setDrawData(null);
     setDrawError(false);
     setStep(0);
@@ -1375,17 +1077,10 @@ const App = () => {
             onFirstSelect={handleFirstSelect}
           />
         )}
-        {step === 6 && (
-          <RevealStep cards={selectedCards} onComplete={handleRevealComplete} />
-        )}
         {step === 7 && question && (
           <ResultStep
             question={question}
             situation={situation}
-            cards={selectedCards}
-            drawnCards={drawnCards}
-            reading={localReading}
-            aiReading={aiReading}
             drawData={drawData}
             onRestart={handleRestart}
             onHome={handleHome}
