@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application configuration loaded from environment variables / .env file."""
 
     log_level: str = "INFO"
-    cors_origins: list[str] = ["http://localhost:5173", "https://seunghyun-sh.github.io"]
+    cors_origins: list[str] = ["http://localhost:5173", "https://seunghyun-sh.github.io", "https://arcana-love-api.onrender.com"]
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
 
