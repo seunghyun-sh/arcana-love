@@ -27,7 +27,7 @@ import type {
 
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 const CATEGORY_EMOJI: Record<LoveQuestionId, string> = {
   situationship: '💫',
