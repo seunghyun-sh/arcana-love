@@ -9,6 +9,8 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:5173"]
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o"
 
     model_config = {
         "env_file": ".env",

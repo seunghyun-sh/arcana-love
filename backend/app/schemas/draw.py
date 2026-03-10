@@ -27,6 +27,8 @@ class DrawnCardInfo(BaseModel):
     name_eng: str = Field(alias="nameEng")
     arcana_type: str = Field(alias="arcanaType")
     is_reversed: bool = Field(alias="isReversed")
+    tone: str = ""
+    keywords: list[str] = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}
 
@@ -37,6 +39,7 @@ class DrawnPosition(BaseModel):
     position: int
     position_desc: str = Field(alias="positionDesc")
     card: DrawnCardInfo
+    interpretation: str = ""
 
     model_config = {"populate_by_name": True}
 
@@ -57,5 +60,44 @@ class DrawResponse(BaseModel):
 
     success: bool
     data: DrawData
+
+    model_config = {"populate_by_name": True}
+
+
+# ── Interpret (LLM) ──
+
+
+class InterpretRequest(BaseModel):
+    """LLM 해석 요청 — draw 결과를 그대로 넘긴다."""
+
+    draw_data: DrawData = Field(alias="drawData")
+    situation: str = ""
+
+    model_config = {"populate_by_name": True}
+
+
+class CardReading(BaseModel):
+    """LLM이 생성한 개별 카드 해석."""
+
+    position: int
+    reading: str
+
+
+class InterpretData(BaseModel):
+    """LLM 해석 결과."""
+
+    card_readings: list[CardReading] = Field(alias="cardReadings")
+    overall_summary: str = Field(alias="overallSummary")
+    final_score: int = Field(alias="finalScore")
+
+    model_config = {"populate_by_name": True}
+
+
+class InterpretResponse(BaseModel):
+    """POST /api/tarot/interpret 응답."""
+
+    success: bool
+    data: InterpretData | None = None
+    error: str | None = None
 
     model_config = {"populate_by_name": True}

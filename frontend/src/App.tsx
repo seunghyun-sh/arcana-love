@@ -15,6 +15,8 @@ import { LOVE_QUESTIONS } from './data/questions';
 import type {
   DrawData,
   DrawResponse,
+  InterpretData,
+  InterpretResponse,
   LoveQuestionId,
   QuestionOption,
 } from './types/tarot';
@@ -33,6 +35,8 @@ const CATEGORY_EMOJI: Record<LoveQuestionId, string> = {
   textNow: '💬',
   reconciliation: '🌙',
   loveLuck: '✨',
+  couple: '💍',
+  chemistry: '🧩',
 };
 
 const CATEGORY_QUESTION: Record<LoveQuestionId, string> = {
@@ -41,6 +45,8 @@ const CATEGORY_QUESTION: Record<LoveQuestionId, string> = {
   textNow: '지금 연락해도 될까?',
   reconciliation: '다시 이어질 수 있을까?',
   loveLuck: '올해 연애운은 어떨까?',
+  couple: '우리, 계속 함께할 수 있을까?',
+  chemistry: '우리 둘, 얼마나 잘 맞을까?',
 };
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -199,67 +205,76 @@ const CategoryStep = ({
   onSelect,
 }: {
   onSelect: (id: LoveQuestionId) => void;
-}) => (
-  <PageWrap k="category">
-    <div className="flex w-full flex-col items-center justify-center pb-20">
-      <motion.h2
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: easeOut }}
-        className="mb-16 text-center font-display text-3xl text-purple-100 drop-shadow-md sm:text-4xl"
-      >
-        어떤 이야기가 궁금하세요?
-      </motion.h2>
+}) => {
+  const centerIndex = Math.floor(LOVE_QUESTIONS.length / 2); // 7장 → 3
 
-      <div className="relative flex h-[450px] w-full max-w-6xl items-end justify-center pb-16">
-        {LOVE_QUESTIONS.map((q, index) => {
-          const offsetIndex = index - 2;
-          const rotation = offsetIndex * 22;
-          const xOffset = offsetIndex * 130;
-          const yOffset = Math.abs(offsetIndex) * 35;
+  return (
+    <PageWrap k="category">
+      <div className="flex w-full flex-col items-center justify-center pb-20">
+        <motion.h2
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: easeOut }}
+          className="mb-16 text-center font-display text-3xl text-purple-100 drop-shadow-md sm:text-4xl"
+        >
+          어떤 이야기가 궁금하세요?
+        </motion.h2>
 
-          return (
-            <motion.button
-              key={q.id}
-              onClick={() => onSelect(q.id)}
-              initial={{ opacity: 0, y: 50, x: -300, rotate: -45, scale: 0.8 }}
-              animate={{ opacity: 1, y: yOffset, x: xOffset, rotate: rotation, scale: 1 }}
-              transition={{
-                duration: 1.2,
-                delay: index * 0.15 + 0.3,
-                ease: [0.16, 1, 0.3, 1], // easeOutQuint 느낌으로 부드럽게
-              }}
-              whileHover={{
-                y: yOffset - 30,
-                scale: 1.05,
-                zIndex: 50,
-                boxShadow: '0px 0px 20px 5px rgba(251, 191, 36, 0.4)',
-              }}
-              style={{
-                transformOrigin: 'bottom center',
-                zIndex: 10 - Math.abs(offsetIndex),
-              }}
-              className="group absolute flex h-80 w-64 cursor-pointer flex-col items-center justify-start rounded-2xl border border-purple-500/40 bg-[#1e1136]/90 p-6 text-left backdrop-blur-md"
-            >
-              <div className="mb-4 text-3xl transition-transform group-hover:scale-110">
-                {CATEGORY_EMOJI[q.id]}
-              </div>
-              <h3 className="mb-3 break-keep text-center text-lg font-medium text-purple-100">
-                {CATEGORY_QUESTION[q.id]}
-              </h3>
-              <p className="break-keep text-center text-sm font-light text-purple-300/80">
-                {q.subtitle}
-              </p>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-2xl text-amber-500/20">
-                ✧
-              </div>
-            </motion.button>
-          );
-        })}
+        <div className="relative flex h-[500px] w-full max-w-6xl items-end justify-center pb-16">
+          {LOVE_QUESTIONS.map((q, index) => {
+            const offset = index - centerIndex; // -3 ~ +3
+            const isCenter = offset === 0;
+            const rotation = offset * 10;
+            const xOffset = offset * 120;
+            const yOffset = offset * offset * 12; // 포물선 (0, 12, 48, 108)
+
+            return (
+              <motion.button
+                key={q.id}
+                onClick={() => onSelect(q.id)}
+                initial={{ opacity: 0, y: 80, x: -300, rotate: -45, scale: 0.7 }}
+                animate={{ opacity: 1, y: yOffset, x: xOffset, rotate: rotation, scale: 1 }}
+                transition={{
+                  duration: 1.2,
+                  delay: index * 0.1 + 0.3,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                whileHover={{
+                  y: yOffset - 30,
+                  scale: 1.08,
+                  zIndex: 50,
+                  boxShadow: '0px 0px 24px 6px rgba(251, 191, 36, 0.35)',
+                }}
+                style={{
+                  transformOrigin: 'bottom center',
+                  zIndex: 10 - Math.abs(offset),
+                }}
+                className={`group absolute flex h-72 w-52 cursor-pointer flex-col items-center justify-start rounded-2xl border p-5 text-left backdrop-blur-md sm:h-80 sm:w-60 sm:p-6 ${
+                  isCenter
+                    ? 'border-amber-400/50 bg-[#1e1136]/95 shadow-[0_0_20px_rgba(251,191,36,0.15)]'
+                    : 'border-purple-500/40 bg-[#1e1136]/90'
+                }`}
+              >
+                <div className="mb-3 text-3xl transition-transform group-hover:scale-110">
+                  {CATEGORY_EMOJI[q.id]}
+                </div>
+                <h3 className="mb-2 break-keep text-center text-base font-medium leading-snug text-purple-100 sm:text-lg">
+                  {CATEGORY_QUESTION[q.id]}
+                </h3>
+                <p className="break-keep text-center text-xs font-light leading-relaxed text-purple-300/80 sm:text-sm">
+                  {q.subtitle}
+                </p>
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-2xl text-amber-500/20">
+                  ✧
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  </PageWrap>
-);
+    </PageWrap>
+  );
+};
 
 /* ────────────────────────────────────────────
    Step 3 — Situation Input & Spread Option
@@ -288,6 +303,14 @@ const SPREAD_OPTIONS: Record<
   loveLuck: [
     { id: 'luck_3months', cards: 3, label: '계절의 연애 흐름 (3장)', desc: '한 달, 두 달, 세 달 뒤… 내게 다가올 인연의 모습' },
     { id: 'luck_soulmate', cards: 5, label: '운명의 붉은 실 (5장)', desc: '나의 연애 성향, 운명의 짝의 특징, 피해야 할 인연과 기회' },
+  ],
+  couple: [
+    { id: 'couple_basic', cards: 3, label: '관계의 온도 (3장)', desc: '현재 우리 관계의 상태, 조심해야 할 위기, 다가올 가까운 미래' },
+    { id: 'couple_deep', cards: 5, label: '두 사람의 궤도 (5장)', desc: '서로의 진짜 속마음, 관계의 숨은 장애물, 더 단단해지기 위한 조언과 최종 결과' },
+  ],
+  chemistry: [
+    { id: 'chemistry_basic', cards: 3, label: '주파수 매칭 (3장)', desc: '나의 연애 성향, 그 사람의 성향, 두 사람이 만났을 때 발생하는 시너지' },
+    { id: 'chemistry_deep', cards: 5, label: '거울과 그림자 (5장)', desc: '서로 끌리는 이유, 부딪힐 수 있는 갈등의 원인, 관계를 부드럽게 풀어나갈 타로의 조언' },
   ],
 };
 
@@ -753,17 +776,55 @@ const ResultStep = ({
   onRestart: () => void;
   onHome: () => void;
 }) => {
-  const [toneStyle, setToneStyle] = useState<'warm' | 'cool' | 'mystic'>('mystic');
+  const [llm, setLlm] = useState<InterpretData | null>(null);
+  const [llmLoading, setLlmLoading] = useState(false);
+  const [llmError, setLlmError] = useState(false);
+
+  useEffect(() => {
+    if (!drawData) return;
+    let cancelled = false;
+    setLlmLoading(true);
+    setLlmError(false);
+
+    (async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/tarot/interpret`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ drawData, situation }),
+        });
+        if (!res.ok) throw new Error();
+        const json: InterpretResponse = await res.json();
+        if (!cancelled && json.success && json.data) {
+          setLlm(json.data);
+        } else if (!cancelled) {
+          setLlmError(true);
+        }
+      } catch {
+        if (!cancelled) setLlmError(true);
+      } finally {
+        if (!cancelled) setLlmLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [drawData, situation]);
 
   if (!drawData) return null;
 
-  // Love possibility score (visual only)
-  const scorePercent = Math.max(20, 80 - drawData.drawnCards.filter(dp => dp.card.isReversed).length * 12);
+  // LLM 결과에서 position별 reading을 매핑
+  const readingMap = new Map(llm?.cardReadings.map((cr) => [cr.position, cr.reading]));
 
-  const toneColors = {
-    warm: 'text-rose-300',
-    cool: 'text-sky-300',
-    mystic: 'text-violet/90',
+  // 점수: LLM finalScore 우선, 없으면 역방향 기반 계산
+  const scorePercent = llm?.finalScore ?? Math.max(20, 80 - drawData.drawnCards.filter(dp => dp.card.isReversed).length * 12);
+
+  const toneColorMap: Record<string, string> = {
+    positive: 'border-emerald-400/30 bg-emerald-400/5',
+    caution: 'border-amber-400/30 bg-amber-400/5',
+    neutral: 'border-lavender/20 bg-lavender/5',
+    negative: 'border-rose-400/30 bg-rose-400/5',
+    complex: 'border-violet/30 bg-violet/5',
+    transformative: 'border-sky-400/30 bg-sky-400/5',
   };
 
   return (
@@ -793,35 +854,67 @@ const ResultStep = ({
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5, ease: easeOut }}
-          className="flex flex-wrap justify-center gap-4"
+          className="space-y-4"
         >
-          {drawData.drawnCards.map((dp) => (
-            <div
-              key={`${dp.position}-${dp.card.id}`}
-              className="glass w-44 rounded-2xl p-5 sm:w-52"
-            >
-              <span className="text-[10px] uppercase tracking-[0.3em] text-amber-400/60">
-                {dp.positionDesc}
-              </span>
-              <h3 className="mt-2 font-display text-2xl text-lavender">
-                {dp.card.nameKor}
-              </h3>
-              <p className="mt-1 text-xs text-amber-400/60">{dp.card.nameEng}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className={`rounded-full px-2 py-0.5 text-[9px] ${
-                  dp.card.arcanaType === 'major' ? 'bg-violet/20 text-violet' : 'bg-emerald-400/20 text-emerald-300'
-                }`}>
-                  {dp.card.arcanaType === 'major' ? 'Major' : 'Minor'}
-                </span>
-                {dp.card.isReversed && (
-                  <span className="rounded-full bg-rose-400/20 px-2 py-0.5 text-[9px] text-rose-300">역방향</span>
+          {drawData.drawnCards.map((dp, i) => {
+            const llmReading = readingMap.get(dp.position);
+            const displayText = llmReading || dp.interpretation;
+
+            return (
+              <motion.div
+                key={`${dp.position}-${dp.card.id}`}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + i * 0.08, duration: 0.4, ease: easeOut }}
+                className={`glass rounded-2xl border p-5 sm:p-6 ${toneColorMap[dp.card.tone] || 'border-lavender/15 bg-lavender/5'}`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-amber-400/60">
+                      {dp.position}. {dp.positionDesc}
+                    </span>
+                    <h3 className="mt-1 font-display text-2xl text-lavender">
+                      {dp.card.nameKor}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-amber-400/60">{dp.card.nameEng}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] ${
+                      dp.card.arcanaType === 'major' ? 'bg-violet/20 text-violet' : 'bg-emerald-400/20 text-emerald-300'
+                    }`}>
+                      {dp.card.arcanaType === 'major' ? 'Major' : 'Minor'}
+                    </span>
+                    {dp.card.isReversed && (
+                      <span className="rounded-full bg-rose-400/20 px-2 py-0.5 text-[9px] text-rose-300">역방향</span>
+                    )}
+                  </div>
+                </div>
+                {/* 해석 텍스트: LLM 로딩 중이면 shimmer, 있으면 표시 */}
+                <div className="mt-4">
+                  {llmLoading && !llmReading ? (
+                    <div className="space-y-2">
+                      <div className="shimmer-bar h-3 w-full rounded-full" />
+                      <div className="shimmer-bar h-3 w-4/5 rounded-full" />
+                    </div>
+                  ) : displayText ? (
+                    <p className="text-sm leading-7 text-lavender/80">{displayText}</p>
+                  ) : null}
+                </div>
+                {dp.card.keywords.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {dp.card.keywords.map((kw) => (
+                      <span key={kw} className="rounded-full border border-lavender/10 px-2.5 py-0.5 text-[10px] text-lavender/40">
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
                 )}
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            );
+          })}
         </motion.section>
 
-        {/* Reading summary */}
+        {/* Overall summary */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -829,15 +922,38 @@ const ResultStep = ({
           className="glass rounded-3xl p-6 sm:p-8"
         >
           <h3 className="font-display text-2xl text-lavender">종합 해석</h3>
-          <p className={`mt-4 text-base leading-8 ${toneColors[toneStyle]}`}>
-            카드가 펼쳐졌습니다. 각 자리의 의미를 되새기며 스스로의 마음을 들여다보세요.
-          </p>
-
-          <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-5">
-            <span className="text-xs uppercase tracking-widest text-amber-400/60">오늘의 한 줄 조언</span>
-            <p className="mt-2 font-display text-xl text-lavender">
-              카드의 메시지를 가볍게 마음에 담아 두세요.
-            </p>
+          <div className="mt-4">
+            {llmLoading ? (
+              <div className="space-y-3">
+                <div className="shimmer-bar h-3 w-full rounded-full" />
+                <div className="shimmer-bar h-3 w-11/12 rounded-full" />
+                <div className="shimmer-bar h-3 w-3/4 rounded-full" />
+                <p className="mt-4 text-center text-xs text-lavender/40">
+                  카드의 흐름을 읽고 있습니다...
+                </p>
+              </div>
+            ) : llm?.overallSummary ? (
+              <div className="space-y-4">
+                {llm.overallSummary.split('\n\n').map((para, i) => (
+                  <p key={i} className="text-sm leading-8 text-lavender/80">{para}</p>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {drawData.drawnCards.map((dp) => (
+                  <p key={dp.position} className="text-sm leading-7 text-lavender/70">
+                    <span className="text-amber-400/80">{dp.positionDesc}</span>
+                    {' — '}
+                    {dp.interpretation || '카드의 메시지를 가볍게 마음에 담아 두세요.'}
+                  </p>
+                ))}
+                {llmError && (
+                  <p className="mt-2 text-xs text-rose-400/60">
+                    AI 해석을 불러오지 못했습니다. 기본 해석을 표시합니다.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </motion.section>
 
@@ -860,29 +976,6 @@ const ResultStep = ({
               className="shimmer-bar h-full rounded-full"
             />
           </div>
-        </motion.section>
-
-        {/* Tone style toggle */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="flex flex-wrap items-center justify-center gap-3"
-        >
-          <span className="text-xs text-lavender/40">결과 스타일:</span>
-          {(['warm', 'cool', 'mystic'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setToneStyle(t)}
-              className={`rounded-full px-4 py-1.5 text-xs transition ${
-                toneStyle === t
-                  ? 'bg-amber-400 text-night'
-                  : 'border border-lavender/15 text-lavender/50 hover:border-lavender/30'
-              }`}
-            >
-              {t === 'warm' ? '다정한' : t === 'cool' ? '냉정한' : '신비로운'}
-            </button>
-          ))}
         </motion.section>
 
         {/* Actions */}
@@ -911,7 +1004,7 @@ const ResultStep = ({
               if (navigator.share) {
                 navigator.share({
                   title: '별빛 타로방 리딩 결과',
-                  text: `${CATEGORY_QUESTION[question.id]} — 카드의 메시지를 가볍게 마음에 담아 두세요.`,
+                  text: `${CATEGORY_QUESTION[question.id]} — ${drawData.spreadName} 스프레드 결과를 확인해보세요.`,
                 }).catch(() => {});
               }
             }}

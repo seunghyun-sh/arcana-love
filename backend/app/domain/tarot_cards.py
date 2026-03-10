@@ -1053,3 +1053,25 @@ MINOR_ARCANA: list[TarotCard] = [
 # ── 전체 78장(메이저 22 + 마이너 56) ──
 
 ALL_CARDS: list[TarotCard] = MAJOR_ARCANA + MINOR_ARCANA
+
+
+# ── FullDeckCard.id (str) → TarotCard 매핑 ──
+
+_SUIT_BASE = {"wands": 100, "cups": 200, "swords": 300, "pentacles": 400}
+_COURT_OFFSET = {"page": 10, "knight": 11, "queen": 12, "king": 13}
+
+
+def _build_deck_id_map() -> dict[str, TarotCard]:
+    by_int_id = {card.id: card for card in ALL_CARDS}
+    result: dict[str, TarotCard] = {}
+    for i in range(22):
+        result[f"major_{i:02d}"] = by_int_id[i]
+    for suit, base in _SUIT_BASE.items():
+        for num in range(1, 11):
+            result[f"minor_{suit}_{num:02d}"] = by_int_id[base + num - 1]
+        for court, offset in _COURT_OFFSET.items():
+            result[f"minor_{suit}_{court}"] = by_int_id[base + offset]
+    return result
+
+
+CARD_BY_DECK_ID: dict[str, TarotCard] = _build_deck_id_map()

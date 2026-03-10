@@ -10,6 +10,7 @@ import uuid
 
 from app.domain.full_deck import FULL_DECK, FullDeckCard
 from app.domain.spreads import SPREADS, SpreadDefinition
+from app.domain.tarot_cards import CARD_BY_DECK_ID
 from app.schemas.draw import (
     DrawData,
     DrawResponse,
@@ -46,16 +47,29 @@ def draw_cards(spread_id: str) -> DrawResponse:
 
     drawn_positions: list[DrawnPosition] = []
     for pos_def, card in zip(spread.positions, cards):
+        tarot = CARD_BY_DECK_ID.get(card.id)
+        meaning_key = pos_def.meaning_key
+        interpretation = ""
+        tone = ""
+        keywords: list[str] = []
+        if tarot:
+            interpretation = tarot.love_meanings.get(meaning_key, "")
+            tone = tarot.tone
+            keywords = tarot.keywords
+
         drawn_positions.append(
             DrawnPosition(
                 position=pos_def.position,
                 positionDesc=pos_def.description,
+                interpretation=interpretation,
                 card=DrawnCardInfo(
                     id=card.id,
                     nameKor=card.name_kor,
                     nameEng=card.name_eng,
                     arcanaType=card.arcana_type,
                     isReversed=_random_reversed(),
+                    tone=tone,
+                    keywords=keywords,
                 ),
             )
         )
