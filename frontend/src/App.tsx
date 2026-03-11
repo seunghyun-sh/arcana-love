@@ -835,7 +835,10 @@ const ResultStep = ({
       try {
         const res = await fetch(`${BACKEND_URL}/api/tarot/interpret`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': '1',
+          },
           body: JSON.stringify({ drawData, situation }),
         });
         if (!res.ok) throw new Error();
@@ -1129,7 +1132,10 @@ const App = () => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/tarot/draw`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': '1',
+        },
         body: JSON.stringify({ spreadId: sid }),
       });
       if (res.ok) {
