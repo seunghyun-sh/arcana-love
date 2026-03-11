@@ -37,7 +37,7 @@ jobs:
       - name: Build app
         run: npm run build
         env:
-          VITE_BACKEND_URL: https://arcana-love-api.onrender.com
+          VITE_BACKEND_URL: https://unpunctate-julieta-agonisingly.ngrok-free.dev
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
